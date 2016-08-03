@@ -1,0 +1,265 @@
+---
+output:
+  pdf_document:
+    includes:
+      in_header: tex/header.tex
+    fig_caption: false
+  word_document: default
+---
+
+```{r DocumentSetup, echo=FALSE, results='hide', include=FALSE}
+### # specify knitr options
+knitr::opts_chunk$set(echo = FALSE, results = 'asis')
+```
+```{r EnumeratorSetup, echo=FALSE, results='hide'}
+### # initialize section counter
+robjSecEnum <- rqudocuhelper::SectionEnumerator$new()
+```
+```{r AbrTableSetup, echo=FALSE, results='hide'}
+### # instantiate table of abbreviation
+r6ob_abbrtable <- rmddochelper::R6ClassTableAbbrev$new()
+```
+
+![Qualitas Logo](png/QualitasLogo.png)
+
+\fcolorbox{black}{white}{
+	\parbox[t]{1.0\linewidth}{
+		\centering \fontsize{12pt}{20pt}\selectfont % 
+		\vspace*{0.5cm} % 
+
+		\hfill Dokumentation
+
+		\vspace*{0.5cm} 
+	}
+}
+
+\vspace*{0.5cm}
+
+\fcolorbox{black}{white}{
+	\parbox[t]{1.0\linewidth}{
+		\centering \fontsize{25pt}{40pt}\selectfont %
+		\vspace*{0.7cm}
+    ADIS Data Export    \\
+    aus ARGUS    \\
+    ATDA-ASR - AdisDataExportArgus  \\
+
+		\vspace*{0.7cm} % Space between the end of the title and the bottom of the grey box
+	}
+}
+
+\vspace*{1cm}
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{png/Pedigree.png}
+\end{center}
+
+\vspace{5ex}
+{\centering \small
+\hfill
+\begin{tabular}{l}
+Peter von Rohr                      \\
+FB EDV, Qualitas AG                 \\
+Chamerstrasse 56, CH-6300 Zug       \\
+\verb+http://www.qualitasag.ch+     \\
+\verb+peter.vonrohr@qualitasag.ch+  
+\end{tabular}
+}
+
+\pagebreak
+
+\tableofcontents
+
+\pagebreak
+
+```{r DocuStatusTable}
+r6objDocStat <- rmddochelper::R6ClassDocuStatus$new()
+r6objDocStat$set_current_status(psVersion = "0.0.901",
+                                psStatus = "Erstellung",
+                                psProject = "AdisDataExportArgus")
+
+r6objDocStat$include_doc_stat(psTitle = "## Status des Dokuments")
+```
+
+\pagebreak
+
+
+## Erklärung
+Dieses Dokument gibt eine Übersicht über die in ARUGS vorhandene Funktionalität zum Datenexport im ADIS-Format.
+
+
+## Einleitung
+
+`r r6ob_abbrtable$add_abbrev(psAbbrev = "ADIS", psMeaning = "Agricultural Data Interchange Syntax")` 
+entspricht einer Formatsdefinition von Daten im Bereich landwirtschaftlicher Nutztiere. Dieses Format wird unter anderem in `ISOagriNET` (ISO17532) verwendet. Als zweiter Bestandteil von `ISOagriNET` wird der Data Dictionary
+`r r6ob_abbrtable$add_abbrev(psAbbrev = "ADED", psMeaning = "Agricultural Data Element Dictionary")` verwendet.
+
+
+## ADIS-Export in ARGUS
+In `r r6ob_abbrtable$add_abbrev(psAbbrev = "ARGUS", psMeaning = "Informationssystem der Zuchtorganisationen")` existiert das PL/SQL-Package `PA_DSCH_ADIS` für den Export von Daten im ADIS-Format. In diesem Package können die folgenden Daten exportiert werden. 
+
+```{r AdisDatenExport}
+dfAdisDataFormat <- data.frame(FormatNummer = c('880001',
+                                                '880003',
+                                                '880006',
+                                                '880008',
+                                                '880012',
+                                                '880005'),
+                               Beschreibung = c("Betriebsdaten Prüftag",
+                                                "Tierbewegungen/Tierbestand im Betrieb",
+                                                "Einzeltierergebnis am Prüfungstag",
+                                                "Laktationsdaten",
+                                                "Kalbedaten",
+                                                "Einzeltier Stammdaten"))
+knitr::kable(dfAdisDataFormat)
+```
+
+Die oben aufgelisteten Daten sind zusammengesetzte Records. Im folgenden wird zu jeder Recordgruppe aus obiger Tabelle die Bestandteile aufgelistet.
+
+
+### Betriebsdaten Prüftag
+
+```{r BetriebsdatenPrueftag}
+dfBtrPrt <- data.frame(FormatNummer = c('00800004150','00800043020','00900032080','00800136020',
+                                        '00800138020','00800139020','00800140020','00800027150',
+                                        '00800704140','00800707140','00800705140','00800708140',
+                                        '00800706010'),
+                       Beschreibung = c("Betriebsnummer",
+                                        "Betriebstätte",
+                                        "Prüfdatum",
+                                        "Prüfmethode",
+                                        "Prüfschema",
+                                        "Prüfintervall",
+                                        "Melkfrequenz",
+                                        "Kontrolleur",
+                                        "Melkbeginnzeit abends",
+                                        "Melkendezeit abends",
+                                        "Melkbeginnzeit morgens",
+                                        "Melkendezeit morgens",
+                                        "Gemelk für alternierende Probenahme"))
+knitr::kable(dfBtrPrt)
+```
+
+In der aktuellen Version der Exportroutine werden davon nur die ersten drei Records plus der Kontrolleur exportiert.
+
+
+### Tierbestand im Betrieb
+
+```{r TierbestandBetrieb}
+dfTbBtr <- data.frame(FormatNummer = c('00900080150',
+                                       '00800004150',
+                                       '00800042010',
+                                       '00900034080',
+                                       '00900070150',
+                                       '00900045120'),
+                       Beschreibung = c("Tiernummer",
+                                        "Betriebsnummer",
+                                        "Nutzungsart des Tieres",
+                                        "Zugangsdatum des Tieres",
+                                        "Stallnummer",
+                                        "Tiername"))
+knitr::kable(dfTbBtr)
+```
+
+
+### Einzeltierergebnis am Prüfungstag
+```{r PruefErgebnis}
+dfPrErg <- data.frame(FormatNummer = c('00800004150',
+                                       '00900080150',
+                                       '00900032080',
+                                       '00800044031',
+                                       '00900077042',
+                                       '00800046032',
+                                       '00800047032',
+                                       '00900047040',
+                                       '00900026030'),
+                      Beschreibung = c("Betriebsnummer",
+                                       "Tiernummer",
+                                       "Prüfdatum",
+                                       "Milch kg",
+                                       "Fett %",
+                                       "Eiw %",
+                                       "Lakt. %",
+                                       "Zellzahl in 1000",
+                                       "Harnstoff ppm"))
+knitr::kable(dfPrErg)
+```
+
+
+### Laktationsdaten
+```{r LaktationsDaten}
+dfLaktDat <- data.frame(FormatNummer = c('00900080150',
+                                         '00900058020',
+                                         '00800004150',
+                                         '00900028080',
+                                         '00800061040',
+                                         '00800062050',
+                                         '00800063032',
+                                         '00800064040',
+                                         '00800065032',
+                                         '00800135040',
+                                         '00800165040'),
+                        Beschreibung = c("Tiernummer",
+                                         "Laktationsnummer",
+                                         "Betriebsnummer",
+                                         "Kalbedatum",
+                                         "Laktationstage",
+                                         "Milch kg",
+                                         "Fett %",
+                                         "Fett kg",
+                                         "Eiw %",
+                                         "Eiw kg",
+                                         "Zellzahl in 1000"))
+knitr::kable(dfLaktDat)
+```
+
+
+### Kalbedaten
+```{r KalbeDaten}
+dfKaDat <- data.frame(FormatNummer = c('00900080150',
+                                       '00900028080',
+                                       '00800105020'),
+                      Beschreibung = c("Tiernummer",
+                                       "Kalbedatum",
+                                       "Nr. der Kalbung (Laktationsnummer)"))
+knitr::kable(dfKaDat)
+```
+
+
+### Einzeltier Stammdaten
+```{r TierStammdaten}
+dfTierStDat <- data.frame(FormatNummer = c('00900080150',
+                                           '00900070150',
+                                           '00800030020',
+                                           '00900053080',
+                                           '00800035150',
+                                           '00800032150',
+                                           '00800111010',
+                                           '00900045120'),
+                          Beschreibung = c("Tiernummer",
+                                           "Stallnummer",
+                                           "Rasse",
+                                           "Geb Dat",
+                                           "Mutter",
+                                           "Vater",
+                                           "Code Geschlecht",
+                                           "Tiername"))
+knitr::kable(dfTierStDat)
+
+```
+
+### Allgemeines Format
+Die Records werden gruppenweise in eine Ausgabedatei geschrieben. Die Gruppeneinteilun der Records erfolgt nach den obigen Tabellen. Die einzelnen Datenfelder haben ein fixes Format. Für jede Recordgruppe wird zuerst eine Kopfzeile geschrieben, welche die Definition der Recordgruppe enthält.
+
+
+<!-- END of document:  Below this must not be anything, except the command to write all abbreviations to a file --> 
+```{r WriteTableOfAbbreviations, results='hide'}
+if (!r6ob_abbrtable$is_empty_abbr())
+  r6ob_abbrtable$writeToTsvFile()
+```
+
+\pagebreak
+
+```{r AbrTableToDocument}
+r6ob_abbrtable$include_abbr_table(psAbbrTitle = "## Abkürzungen")
+```
+ 
